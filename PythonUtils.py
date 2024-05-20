@@ -1,6 +1,7 @@
 import os
 import shutil
 import math
+import numpy as np
 
 def server_to_clients(filename):
     c_path = os.getcwd()
@@ -49,16 +50,6 @@ def clients_to_server():
 def delete_file(file_path):
     if os.path.exists(file_path):
         os.remove(file_path)
-
-def alpha_weighted(weight,alpha,dividing_factor):
-    if alpha<0:
-        print('alpha should be positive')
-        exit(0)
-    elif alpha==1:
-        rtn = math.log(alpha,10)
-    else:
-        rtn = (weight**(1-alpha))/((1-alpha)*dividing_factor)
-    return rtn
 
 def normalize_list(lst):
     total = sum(lst)

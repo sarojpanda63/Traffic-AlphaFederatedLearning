@@ -7,6 +7,7 @@ from keras.models import Sequential
 from keras.layers import LSTM, Dense, Dropout, RepeatVector
 from keras.optimizers import Adam
 from keras.losses import Loss, Huber
+from numpy.core._multiarray_umath import log10
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
 from PythonUtils import *
@@ -39,7 +40,7 @@ def get_weighted_average_of_model_and_set_weight_of_server_model_and_save_server
     weights_model4 = m4.get_weights()
     weights_model5 = m5.get_weights()
 
-    alpha_average_weights = [alpha_weighted((weithages_list[0] * w1 + weithages_list[1]* w2 + weithages_list[2] * w3 + weithages_list[3] * w4 + weithages_list[4] * w5),alpha=alpha, dividing_factor=dividing_factor)
+    alpha_average_weights = [alpha_weighted((weithages_list[0] * w1 + weithages_list[1]* w2 + weithages_list[2] * w3 + weithages_list[3] * w4 + weithages_list[4] * w5),alpha=alpha, factor=dividing_factor)
                        for w1, w2, w3, w4, w5 in zip(weights_model1, weights_model2, weights_model3, weights_model4, weights_model5)]
 
     delete_file(model1_weight_path)
@@ -161,9 +162,9 @@ def plot_train_and_test_loss_wrt_epoch(path,client,y1, y2):
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
     plt.legend(['Training loss', 'Validation loss'], loc='upper right')
-    # plt.legend(['Training loss: '+str(list(y1)[-1]), 'Validation loss: '+str(list(y2)[-1])], loc='upper right')
+    plt.legend(['Training loss: '+str(list(y1)[-1]), 'Validation loss: '+str(list(y2)[-1])], loc='upper right')
     plt.savefig(path+"LearningCurve.jpg")
-    # print('Training loss: '+str(list(y1)[-1]), 'Validation loss: '+str(list(y2)[-1]))
+    print('Training loss: '+str(list(y1)[-1]), 'Validation loss: '+str(list(y2)[-1]))
 
 def update_and_save_the_learning_curve(path,training_history,loss_name,client):
     update_loss_n_val_loss(path + 'history', training_history, loss_name)
@@ -194,17 +195,29 @@ def make_rnn_data(col_name,df,train_portion,lookback):
     train_size = int(len(scaled_df)*train_portion)
     train_df = scaled_df[0:train_size,:]
     test_df = scaled_df[train_size-lookback:,:]
-    # print("\nShaped of Train, Test(",col_name,") : ", train_df.shape, test_df.shape)
+    print("\nShaped of Train, Test(",col_name,") : ", train_df.shape, test_df.shape)
     train_x, train_y = create_rnn_dataset(train_df,lookback)
     train_x = np.reshape(train_x, (train_x.shape[0],1, train_x.shape[1]))
-    # print("Shapes of X, Y(train)(",col_name,") : ", train_x.shape, train_y.shape)
+    print("Shapes of X, Y(train)(",col_name,") : ", train_x.shape, train_y.shape)
     test_x, test_y = create_rnn_dataset(test_df,lookback)
     test_x = np.reshape(test_x, (test_x.shape[0],1, test_x.shape[1]))
-    # print("Shapes of X, Y(val+test)(",col_name,") : ", test_x.shape, test_y.shape)
+    print("Shapes of X, Y(val+test)(",col_name,") : ", test_x.shape, test_y.shape)
     return train_x, train_y, test_x, test_y
 
 def find_mean_squared_error(model,client,y_test,x_test):
-    # pass
     y_pred = model.predict(x_test).flatten()
     mse = mean_squared_error(y_test, y_pred)
     print(client+"- Mean Squared Error: "+str(mse))
+def alpha_weighted(weight,alpha,factor):
+    weight[(weight<.0000001) & (weight>=0)] = .0000001
+    weight[(weight>-.0000001) & (weight<0)] = -.0000001
+    weight = weight * factor
+    if alpha<0:
+        print('alpha should be positive')
+        exit(0)
+    elif alpha==1:
+        # weight=np.abs(weight)
+        rtn = log10(weight)
+    else:
+        rtn = (weight**(1-alpha))/(1-alpha)
+    return rtn

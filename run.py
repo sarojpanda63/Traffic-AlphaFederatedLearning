@@ -36,13 +36,13 @@ if __name__ == '__main__':
     server_to_clients('server_model.h5')
     run_local_model('server_model.h5')
     weithages_list = get_the_weightage_of_each_client(70, 100)
-    alpha = 1
+    alpha = 3
+    factor = 1000
     iteration = 10
-    dividing_factor = 30000000
 
     for i in list(range(1,iteration+1)):
         print('Additional epoch....',i,'/',iteration)
         clients_to_server()
-        get_weighted_average_of_model_and_set_weight_of_server_model_and_save_server_weights(weithages_list,alpha,dividing_factor)
+        get_weighted_average_of_model_and_set_weight_of_server_model_and_save_server_weights(weithages_list,alpha,factor)
         server_to_clients('server_weights.h5')
         run_local_model('server_weights.h5')
